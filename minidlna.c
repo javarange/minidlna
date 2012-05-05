@@ -746,21 +746,21 @@ init(int argc, char * * argv)
 			exit(0);
 			break;
 		case 'u':
-		        if (i+1 < argc) {
-                            char * user = argv[++i];
-                            struct passwd * pwd;
-                            if ((pwd = getpwnam(user)) == NULL) {
-                                DPRINTF(E_FATAL, L_GENERAL, "Unknown user %s", user);
-                            }
-                            else {
-                                runtime_vars.uid = pwd->pw_uid;
-                                runtime_vars.gid = pwd->pw_gid;
-                            }
-                        }
-                        else {
-                            DPRINTF(E_FATAL, L_GENERAL, "Option -%c takes one argument.\n", argv[i][1]);
-		        }
-		        break;
+			if (i+1 < argc) {
+				char * user = argv[++i];
+				struct passwd * pwd;
+				if ((pwd = getpwnam(user)) == NULL) {
+					DPRINTF(E_FATAL, L_GENERAL, "Unknown user %s", user);
+				}
+				else {
+					runtime_vars.uid = pwd->pw_uid;
+					runtime_vars.gid = pwd->pw_gid;
+				}
+			}
+			else {
+				DPRINTF(E_FATAL, L_GENERAL, "Option -%c takes one argument.\n", argv[i][1]);
+			}
+			break;
 		default:
 			DPRINTF(E_ERROR, L_GENERAL, "Unknown option: %s\n", argv[i]);
 		}
@@ -855,10 +855,10 @@ init(int argc, char * * argv)
 
 	/* Drop privileges. */
 	if (setgid(runtime_vars.gid) == -1) {
-	    DPRINTF(E_ERROR, L_GENERAL, "Failed to drop privileges (setgid).");
+		DPRINTF(E_ERROR, L_GENERAL, "Failed to drop privileges (setgid).");
 	}
 	if (setuid(runtime_vars.uid) == -1) {
-	    DPRINTF(E_ERROR, L_GENERAL, "Failed to drop privileges (setuid).");
+		DPRINTF(E_ERROR, L_GENERAL, "Failed to drop privileges (setuid).");
 	}
 
 	if (writepidfile(pidfilename, pid) != 0)
