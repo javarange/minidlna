@@ -745,6 +745,22 @@ init(int argc, char * * argv)
 			printf("Version " MINIDLNA_VERSION "\n");
 			exit(0);
 			break;
+		case 'u':
+			if (i+1 < argc) {
+				char * user = argv[++i];
+				struct passwd * pwd;
+				if ((pwd = getpwnam(user)) == NULL) {
+					DPRINTF(E_FATAL, L_GENERAL, "Unknown user %s", user);
+				}
+				else {
+					runtime_vars.uid = pwd->pw_uid;
+					runtime_vars.gid = pwd->pw_gid;
+				}
+			}
+			else {
+				DPRINTF(E_FATAL, L_GENERAL, "Option -%c takes one argument.\n", argv[i][1]);
+			}
+			break;
 		default:
 			DPRINTF(E_ERROR, L_GENERAL, "Unknown option: %s\n", argv[i]);
 		}
@@ -772,7 +788,7 @@ init(int argc, char * * argv)
 			/*"[-l logfile] " not functionnal */
 			"\t\t[-s serial] [-m model_number] \n"
 			"\t\t[-t notify_interval] [-P pid_filename]\n"
-			"\t\t[-w url] [-R] [-V] [-h]\n"
+			"\t\t[-w url] [-R] [-u user] [-V] [-h]\n"
 		        "\nNotes:\n\tNotify interval is in seconds. Default is 895 seconds.\n"
 			"\tDefault pid file is %s.\n"
 			"\tWith -d minidlna will run in debug mode (not daemonize).\n"
@@ -780,6 +796,7 @@ init(int argc, char * * argv)
 			"\t-h displays this text\n"
 			"\t-R forces a full rescan\n"
 			"\t-L do note create playlists\n"
+			"\t-u drop privileges to specified user\n"
 			"\t-V print the version number\n",
 		        argv[0], pidfilename);
 		return 1;
@@ -817,7 +834,7 @@ init(int argc, char * * argv)
 		DPRINTF(E_ERROR, L_GENERAL, "MiniDLNA is already running. EXITING.\n");
 		return 1;
 	}	
-
+	
 	set_startup_time();
 
 	/* presentation url */
@@ -835,6 +852,14 @@ init(int argc, char * * argv)
 		DPRINTF(E_FATAL, L_GENERAL, "Failed to set %s handler. EXITING.\n", SIGINT);
 	if (signal(SIGPIPE, SIG_IGN) == SIG_ERR)
 		DPRINTF(E_FATAL, L_GENERAL, "Failed to set %s handler. EXITING.\n", SIGPIPE);
+
+	/* Drop privileges. */
+	if (setgid(runtime_vars.gid) == -1) {
+		DPRINTF(E_ERROR, L_GENERAL, "Failed to drop privileges (setgid).");
+	}
+	if (setuid(runtime_vars.uid) == -1) {
+		DPRINTF(E_ERROR, L_GENERAL, "Failed to drop privileges (setuid).");
+	}
 
 	if (writepidfile(pidfilename, pid) != 0)
 		pidfilename = NULL;
