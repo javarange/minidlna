@@ -756,6 +756,7 @@ init(int argc, char * * argv)
 					runtime_vars.uid = pwd->pw_uid;
 					runtime_vars.gid = pwd->pw_gid;
 				}
+				free(user);
 			}
 			else {
 				DPRINTF(E_FATAL, L_GENERAL, "Option -%c takes one argument.\n", argv[i][1]);
