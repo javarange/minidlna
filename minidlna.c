@@ -352,6 +352,7 @@ init(int argc, char * * argv)
 	char ip_addr[INET_ADDRSTRLEN + 3] = {'\0'};
 	char log_str[72] = "general,artwork,database,inotify,scanner,metadata,http,ssdp,tivo=warn";
 	char *log_level = NULL;
+	char * user;
 
 	/* first check if "-f" option is used */
 	for(i=2; i<argc; i++)
@@ -587,6 +588,20 @@ init(int argc, char * * argv)
 				break;
 			case UPNPMINISSDPDSOCKET:
 				minissdpdsocketpath = ary_options[i].value;
+				break;
+			case USERNAME:
+				/* Or should I use already defined string variable?
+				 * If you decide to, don't forget to change it at -u.
+				 */
+				user = ary_options[i].value;
+				struct passwd * pwd;
+				if ((pwd = getpwnam(user)) == NULL) {
+					DPRINTF(E_FATAL, L_GENERAL, "Unknown user %s", user);
+				}
+				else {
+					runtime_vars.uid = pwd->pw_uid;
+					runtime_vars.gid = pwd->pw_gid;
+				}
 				break;
 			default:
 				DPRINTF(E_ERROR, L_GENERAL, "Unknown option in file %s\n",
