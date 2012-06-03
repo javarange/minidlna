@@ -352,7 +352,7 @@ init(int argc, char * * argv)
 	char ip_addr[INET_ADDRSTRLEN + 3] = {'\0'};
 	char log_str[72] = "general,artwork,database,inotify,scanner,metadata,http,ssdp,tivo=warn";
 	char *log_level = NULL;
-	char * user;
+	char * user = NULL;
 
 	/* first check if "-f" option is used */
 	for(i=2; i<argc; i++)
@@ -594,14 +594,6 @@ init(int argc, char * * argv)
 				 * If you decide to, don't forget to change it at -u.
 				 */
 				user = ary_options[i].value;
-				struct passwd * pwd;
-				if ((pwd = getpwnam(user)) == NULL) {
-					DPRINTF(E_FATAL, L_GENERAL, "Unknown user %s", user);
-				}
-				else {
-					runtime_vars.uid = pwd->pw_uid;
-					runtime_vars.gid = pwd->pw_gid;
-				}
 				break;
 			default:
 				DPRINTF(E_ERROR, L_GENERAL, "Unknown option in file %s\n",
@@ -762,16 +754,7 @@ init(int argc, char * * argv)
 			break;
 		case 'u':
 			if (i+1 < argc) {
-				char * user = argv[++i];
-				struct passwd * pwd;
-				if ((pwd = getpwnam(user)) == NULL) {
-					DPRINTF(E_FATAL, L_GENERAL, "Unknown user %s", user);
-				}
-				else {
-					runtime_vars.uid = pwd->pw_uid;
-					runtime_vars.gid = pwd->pw_gid;
-				}
-				free(user);
+				user = argv[++i];
 			}
 			else {
 				DPRINTF(E_FATAL, L_GENERAL, "Option -%c takes one argument.\n", argv[i][1]);
@@ -870,13 +853,22 @@ init(int argc, char * * argv)
 		DPRINTF(E_FATAL, L_GENERAL, "Failed to set %s handler. EXITING.\n", SIGPIPE);
 
 	/* Drop privileges. */
-	if (setgid(runtime_vars.gid) == -1) {
-		DPRINTF(E_ERROR, L_GENERAL, "Failed to drop privileges (setgid).");
+	if (user != NULL) {
+	    struct passwd * pwd;
+	    if ((pwd = getpwnam(user)) == NULL) {
+	        DPRINTF(E_FATAL, L_GENERAL, "Unknown user %s", user);
+	    }
+	    else {
+	        if (setgid(pwd->pw_gid) == -1) {
+	            DPRINTF(E_ERROR, L_GENERAL, "Failed to drop privileges (setgid).");
+	        }
+	        if (setuid(pwd->pw_uid) == -1) {
+	            DPRINTF(E_ERROR, L_GENERAL, "Failed to drop privileges (setuid).");
+	        }
+	    }
+	    free(user);
 	}
-	if (setuid(runtime_vars.uid) == -1) {
-		DPRINTF(E_ERROR, L_GENERAL, "Failed to drop privileges (setuid).");
-	}
-
+	
 	if (writepidfile(pidfilename, pid) != 0)
 		pidfilename = NULL;
 
